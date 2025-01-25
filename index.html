@@ -128,19 +128,11 @@
     </div>
     <div id="userPanel" class="hidden">
       <h2>Bienvenido, <span id="currentUser"></span></h2>
-      <button onclick="showSection('changePassword')">Cambiar Contraseña</button>
       <button onclick="showSection('uploadPhoto')">Subir Foto</button>
       <button onclick="showSection('registerMatch')">Registrar Partido</button>
-      <button onclick="showSection('confirmMatches')">Confirmar Partidos</button>
       <button onclick="showSection('ranking')">Ver Ranking</button>
       <button onclick="showSection('amazon')">Productos Recomendados</button>
       <button onclick="logout()">Cerrar Sesión</button>
-    </div>
-    <div id="changePassword" class="hidden">
-      <h2>Cambiar Contraseña</h2>
-      <input type="password" id="newPassword" placeholder="Nueva Contraseña">
-      <button onclick="changePassword()">Cambiar</button>
-      <button onclick="showSection('userPanel')">Regresar</button>
     </div>
     <div id="uploadPhoto" class="hidden">
       <h2>Foto de Perfil</h2>
@@ -150,14 +142,11 @@
     </div>
     <div id="registerMatch" class="hidden">
       <h2>Registrar Partido</h2>
-      <input type="text" id="player1" placeholder="Jugador 1">
-      <input type="text" id="player2" placeholder="Jugador 2">
+      <input type="text" id="searchPlayer1" placeholder="Buscar Jugador 1" oninput="filterPlayers('player1List', this.value)">
+      <div id="player1List" class="player-list"></div>
+      <input type="text" id="searchPlayer2" placeholder="Buscar Jugador 2" oninput="filterPlayers('player2List', this.value)">
+      <div id="player2List" class="player-list"></div>
       <button onclick="registerMatch()">Registrar</button>
-      <button onclick="showSection('userPanel')">Regresar</button>
-    </div>
-    <div id="confirmMatches" class="hidden">
-      <h2>Confirmar Partidos</h2>
-      <div id="pendingMatchesList"></div>
       <button onclick="showSection('userPanel')">Regresar</button>
     </div>
     <div id="ranking" class="hidden">
@@ -214,7 +203,7 @@
     function showSection(sectionId) {
       document.querySelectorAll('.container > div').forEach(div => div.classList.add('hidden'));
       document.getElementById(sectionId).classList.remove('hidden');
-      if (sectionId === 'confirmMatches') loadPendingMatches();
+      if (sectionId === 'registerMatch') loadPlayers();
       if (sectionId === 'ranking') showRanking();
     }
 
@@ -276,18 +265,6 @@
       }
     }
 
-    async function changePassword() {
-      const newPassword = document.getElementById('newPassword').value;
-      if (currentUser) {
-        const { error } = await supabase.auth.updateUser({ password: newPassword });
-        if (error) {
-          alert('Error al cambiar la contraseña: ' + error.message);
-        } else {
-          alert('Contraseña cambiada!');
-        }
-      }
-    }
-
     async function uploadPhoto() {
       const file = document.getElementById('photo').files[0];
       if (file) {
@@ -310,122 +287,49 @@
       }
     }
 
+    async function loadPlayers() {
+      const { data: profiles, error } = await supabase
+        .from('profiles')
+        .select('username');
+
+      if (error) {
+        alert('Error al cargar los jugadores: ' + error.message);
+        return;
+      }
+
+      const player1List = document.getElementById('player1List');
+      const player2List = document.getElementById('player2List');
+      player1List.innerHTML = profiles.map(p => `<div onclick="selectPlayer('player1', '${p.username}')">${p.username}</div>`).join('');
+      player2List.innerHTML = profiles.map(p => `<div onclick="selectPlayer('player2', '${p.username}')">${p.username}</div>`).join('');
+    }
+
+    function filterPlayers(listId, searchTerm) {
+      const list = document.getElementById(listId);
+      Array.from(list.children).forEach(item => {
+        item.style.display = item.textContent.toLowerCase().includes(searchTerm.toLowerCase()) ? 'block' : 'none';
+      });
+    }
+
+    function selectPlayer(playerField, username) {
+      document.getElementById(`search${playerField.charAt(0).toUpperCase() + playerField.slice(1)}`).value = username;
+    }
+
     async function registerMatch() {
-      const player1 = document.getElementById('player1').value;
-      const player2 = document.getElementById('player2').value;
+      const player1 = document.getElementById('searchPlayer1').value;
+      const player2 = document.getElementById('searchPlayer2').value;
       const winner = prompt(`¿Quién ganó? (${player1} o ${player2})`);
 
       if (winner === player1 || winner === player2) {
         const { data, error } = await supabase
           .from('matches')
-          .insert([{ player1, player2, winner, confirmedBy: [] }]);
+          .insert([{ player1, player2, winner }]);
 
         if (error) {
           alert('Error al registrar el partido: ' + error.message);
         } else {
-          alert('Partido registrado. Esperando confirmación del otro jugador.');
+          alert('Partido registrado.');
           showSection('userPanel');
         }
-      }
-    }
-
-    async function loadPendingMatches() {
-      const { data: matches, error } = await supabase
-        .from('matches')
-        .select('*')
-        .or(`player1.eq.${currentUser.email},player2.eq.${currentUser.email}`);
-
-      if (error) {
-        alert('Error al cargar los partidos pendientes: ' + error.message);
-        return;
-      }
-
-      const pendingMatchesList = document.getElementById('pendingMatchesList');
-      pendingMatchesList.innerHTML = matches
-        .map(match => `
-          <div>
-            <p>${match.player1} vs ${match.player2} - Ganador: ${match.winner}</p>
-            ${match.confirmedBy.includes(currentUser.email) ? 'Confirmado' : `
-              <button onclick="confirmMatch('${match.player1}', '${match.player2}')">Confirmar</button>
-            `}
-          </div>
-        `).join('');
-    }
-
-    async function confirmMatch(player1, player2) {
-      const { data: match, error } = await supabase
-        .from('matches')
-        .select('*')
-        .eq('player1', player1)
-        .eq('player2', player2)
-        .single();
-
-      if (error) {
-        alert('Error al cargar el partido: ' + error.message);
-        return;
-      }
-
-      if (match && !match.confirmedBy.includes(currentUser.email)) {
-        const confirmedBy = [...match.confirmedBy, currentUser.email];
-
-        const { data: updatedMatch, error: updateError } = await supabase
-          .from('matches')
-          .update({ confirmedBy })
-          .eq('id', match.id);
-
-        if (updateError) {
-          alert('Error al confirmar el partido: ' + updateError.message);
-          return;
-        }
-
-        if (confirmedBy.length === 2) {
-          const { data: p1, error: p1Error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('username', match.player1)
-            .single();
-
-          const { data: p2, error: p2Error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('username', match.player2)
-            .single();
-
-          if (p1Error || p2Error) {
-            alert('Error al cargar los perfiles de los jugadores.');
-            return;
-          }
-
-          updateElo(p1, p2, match.winner);
-
-          const { error: deleteError } = await supabase
-            .from('matches')
-            .delete()
-            .eq('id', match.id);
-
-          if (deleteError) {
-            alert('Error al eliminar el partido confirmado: ' + deleteError.message);
-          } else {
-            alert('Partido confirmado y Elo actualizado.');
-          }
-        } else {
-          alert('Confirmación registrada. Esperando confirmación del otro jugador.');
-        }
-
-        loadPendingMatches();
-      }
-    }
-
-    function updateElo(p1, p2, winner) {
-      const K = 32;
-      const expected1 = 1 / (1 + 10 ** ((p2.elo - p1.elo) / 400));
-      const expected2 = 1 / (1 + 10 ** ((p1.elo - p2.elo) / 400));
-      if (winner === p1.username) {
-        p1.elo += K * (1 - expected1);
-        p2.elo += K * (0 - expected2);
-      } else {
-        p1.elo += K * (0 - expected1);
-        p2.elo += K * (1 - expected2);
       }
     }
 

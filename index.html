@@ -99,6 +99,34 @@
       0%, 100% { transform: translateY(0); }
       50% { transform: translateY(-10px); }
     }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #1e1e1e;
+      padding: 20px;
+      border: 2px solid #ffcc00;
+      border-radius: 10px;
+      z-index: 1000;
+    }
+    .modal-content {
+      text-align: center;
+    }
+    .modal button {
+      margin: 10px;
+    }
+    .overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 999;
+    }
   </style>
 </head>
 <body>
@@ -142,11 +170,7 @@
     </div>
     <div id="registerMatch" class="hidden">
       <h2>Registrar Partido</h2>
-      <input type="text" id="searchPlayer1" placeholder="Buscar Jugador 1" oninput="filterPlayers('player1List', this.value)">
-      <div id="player1List" class="player-list"></div>
-      <input type="text" id="searchPlayer2" placeholder="Buscar Jugador 2" oninput="filterPlayers('player2List', this.value)">
-      <div id="player2List" class="player-list"></div>
-      <button onclick="registerMatch()">Registrar</button>
+      <button onclick="openPlayerModal()">Seleccionar Contrincante</button>
       <button onclick="showSection('userPanel')">Regresar</button>
     </div>
     <div id="ranking" class="hidden">
@@ -162,13 +186,24 @@
       <button onclick="showSection('userPanel')">Regresar</button>
     </div>
   </div>
+
+  <div id="playerModal" class="modal">
+    <div class="modal-content">
+      <h2>Seleccionar Contrincante</h2>
+      <input type="text" id="searchPlayer" placeholder="Buscar jugador" oninput="filterPlayers()">
+      <div id="playerList" class="player-list"></div>
+      <button onclick="closePlayerModal()">Cerrar</button>
+    </div>
+  </div>
+  <div id="overlay" class="overlay"></div>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const supabaseUrl = 'https://tcypslgtdaroticulnfu.supabase.co';
       const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRjeXBzbGd0ZGFyb3RpY3VsbmZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc4Mjk4MTQsImV4cCI6MjA1MzQwNTgxNH0.E_w5yWzbzGQKEuDvKd7n7pbFUmb7Whd0pVis9li9LEA';
       window.supabase = supabase.createClient(supabaseUrl, supabaseKey, {
-        auth: { persistSession: true }
+        auth: { persistSession: true, detectSessionInUrl: true }
       });
 
       supabase.auth.onAuthStateChange(async (event, session) => {
@@ -199,11 +234,11 @@
     });
 
     let currentUser = null;
+    let selectedOpponent = null;
 
     function showSection(sectionId) {
       document.querySelectorAll('.container > div').forEach(div => div.classList.add('hidden'));
       document.getElementById(sectionId).classList.remove('hidden');
-      if (sectionId === 'registerMatch') loadPlayers();
       if (sectionId === 'ranking') showRanking();
     }
 
@@ -287,42 +322,58 @@
       }
     }
 
+    function openPlayerModal() {
+      document.getElementById('playerModal').style.display = 'block';
+      document.getElementById('overlay').style.display = 'block';
+      loadPlayers();
+    }
+
+    function closePlayerModal() {
+      document.getElementById('playerModal').style.display = 'none';
+      document.getElementById('overlay').style.display = 'none';
+    }
+
     async function loadPlayers() {
       const { data: profiles, error } = await supabase
         .from('profiles')
-        .select('username');
+        .select('username')
+        .neq('username', currentUser.email);
 
       if (error) {
         alert('Error al cargar los jugadores: ' + error.message);
         return;
       }
 
-      const player1List = document.getElementById('player1List');
-      const player2List = document.getElementById('player2List');
-      player1List.innerHTML = profiles.map(p => `<div onclick="selectPlayer('player1', '${p.username}')">${p.username}</div>`).join('');
-      player2List.innerHTML = profiles.map(p => `<div onclick="selectPlayer('player2', '${p.username}')">${p.username}</div>`).join('');
+      const playerList = document.getElementById('playerList');
+      playerList.innerHTML = profiles.map(p => `<div onclick="selectOpponent('${p.username}')">${p.username}</div>`).join('');
     }
 
-    function filterPlayers(listId, searchTerm) {
-      const list = document.getElementById(listId);
-      Array.from(list.children).forEach(item => {
-        item.style.display = item.textContent.toLowerCase().includes(searchTerm.toLowerCase()) ? 'block' : 'none';
+    function filterPlayers() {
+      const searchTerm = document.getElementById('searchPlayer').value.toLowerCase();
+      const playerList = document.getElementById('playerList');
+      Array.from(playerList.children).forEach(item => {
+        item.style.display = item.textContent.toLowerCase().includes(searchTerm) ? 'block' : 'none';
       });
     }
 
-    function selectPlayer(playerField, username) {
-      document.getElementById(`search${playerField.charAt(0).toUpperCase() + playerField.slice(1)}`).value = username;
+    function selectOpponent(username) {
+      selectedOpponent = username;
+      closePlayerModal();
+      registerMatch();
     }
 
     async function registerMatch() {
-      const player1 = document.getElementById('searchPlayer1').value;
-      const player2 = document.getElementById('searchPlayer2').value;
-      const winner = prompt(`¿Quién ganó? (${player1} o ${player2})`);
+      if (!selectedOpponent) {
+        alert('Por favor, selecciona un contrincante.');
+        return;
+      }
 
-      if (winner === player1 || winner === player2) {
+      const winner = prompt(`¿Quién ganó? (${currentUser.email} o ${selectedOpponent})`);
+
+      if (winner === currentUser.email || winner === selectedOpponent) {
         const { data, error } = await supabase
           .from('matches')
-          .insert([{ player1, player2, winner }]);
+          .insert([{ player1: currentUser.email, player2: selectedOpponent, winner }]);
 
         if (error) {
           alert('Error al registrar el partido: ' + error.message);

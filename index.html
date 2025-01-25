@@ -180,7 +180,9 @@
     document.addEventListener('DOMContentLoaded', () => {
       const supabaseUrl = 'https://tcypslgtdaroticulnfu.supabase.co';
       const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRjeXBzbGd0ZGFyb3RpY3VsbmZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc4Mjk4MTQsImV4cCI6MjA1MzQwNTgxNH0.E_w5yWzbzGQKEuDvKd7n7pbFUmb7Whd0pVis9li9LEA';
-      window.supabase = supabase.createClient(supabaseUrl, supabaseKey);
+      window.supabase = supabase.createClient(supabaseUrl, supabaseKey, {
+        auth: { persistSession: true } // Habilitar persistencia de sesión
+      });
 
       supabase.auth.onAuthStateChange(async (event, session) => {
         if (event === 'SIGNED_IN' && session) {

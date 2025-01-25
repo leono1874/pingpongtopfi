@@ -116,15 +116,13 @@
     <div id="login" class="hidden">
       <h2>Iniciar Sesión</h2>
       <input type="email" id="loginEmail" placeholder="Correo electrónico">
-      <input type="password" id="loginPassword" placeholder="Contraseña">
-      <button onclick="login()">Iniciar Sesión</button>
+      <button onclick="sendMagicLink()">Enviar enlace mágico</button>
       <button onclick="showSection('mainMenu')">Regresar</button>
     </div>
     <div id="register" class="hidden">
       <h2>Registro</h2>
       <input type="text" id="username" placeholder="Usuario">
       <input type="email" id="email" placeholder="Correo electrónico">
-      <input type="password" id="password" placeholder="Contraseña">
       <button onclick="register()">Registrar</button>
       <button onclick="showSection('mainMenu')">Regresar</button>
     </div>
@@ -181,15 +179,12 @@
       const supabaseUrl = 'https://tcypslgtdaroticulnfu.supabase.co';
       const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRjeXBzbGd0ZGFyb3RpY3VsbmZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc4Mjk4MTQsImV4cCI6MjA1MzQwNTgxNH0.E_w5yWzbzGQKEuDvKd7n7pbFUmb7Whd0pVis9li9LEA';
       window.supabase = supabase.createClient(supabaseUrl, supabaseKey, {
-        auth: { persistSession: true } // Habilitar persistencia de sesión
+        auth: { persistSession: true }
       });
 
       supabase.auth.onAuthStateChange(async (event, session) => {
         if (event === 'SIGNED_IN' && session) {
           currentUser = session.user;
-          document.getElementById('currentUser').textContent = currentUser.email;
-          showSection('userPanel');
-
           const { data: profile, error } = await supabase
             .from('profiles')
             .select('*')
@@ -204,7 +199,10 @@
             if (insertError) {
               alert('Error al crear el perfil: ' + insertError.message);
             }
+          } else {
+            document.getElementById('currentUser').textContent = profile.username;
           }
+          showSection('userPanel');
         }
       });
 
@@ -223,12 +221,13 @@
     async function register() {
       const username = document.getElementById('username').value;
       const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
 
-      if (username && email && password) {
+      if (username && email) {
         const { user, error } = await supabase.auth.signUp({
           email,
-          password,
+          options: {
+            emailRedirectTo: window.location.href,
+          },
         });
 
         if (error) {
@@ -248,21 +247,22 @@
       }
     }
 
-    async function login() {
+    async function sendMagicLink() {
       const email = document.getElementById('loginEmail').value;
-      const password = document.getElementById('loginPassword').value;
 
-      const { user, error } = await supabase.auth.signIn({
-        email,
-        password,
-      });
+      if (email) {
+        const { error } = await supabase.auth.signInWithOtp({
+          email,
+          options: {
+            emailRedirectTo: window.location.href,
+          },
+        });
 
-      if (error) {
-        alert('Error al iniciar sesión: ' + error.message);
-      } else {
-        currentUser = user;
-        document.getElementById('currentUser').textContent = user.email;
-        showSection('userPanel');
+        if (error) {
+          alert('Error al enviar el enlace mágico: ' + error.message);
+        } else {
+          alert('¡Revisa tu correo electrónico para iniciar sesión!');
+        }
       }
     }
 

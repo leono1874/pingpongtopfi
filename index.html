@@ -1,247 +1,455 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ping Pong Top Global</title>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Press Start 2P', cursive;
-            margin: 0;
-            padding: 0;
-            background-color: black;
-            color: #f0f0f0;
-        }
-        h1 {
-            text-align: center;
-            color: #ffcc00;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
-            animation: glow 1.5s infinite alternate;
-        }
-        @keyframes glow {
-            0% { text-shadow: 0 0 5px #ffcc00, 0 0 10px #ffcc00; }
-            100% { text-shadow: 0 0 20px #ffcc00, 0 0 30px #ffcc00; }
-        }
-        .container {
-            max-width: 600px;
-            margin: auto;
-            padding: 20px;
-            background: rgba(50, 50, 50, 0.8);
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.9);
-            border-radius: 10px;
-            border: 2px solid #ffcc00;
-        }
-        .form-group, .tournament-group {
-            margin-bottom: 15px;
-        }
-        input[type="text"], button {
-            width: 100%;
-            padding: 10px;
-            margin: 5px 0;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            font-family: 'Press Start 2P', cursive;
-        }
-        button {
-            background-color: #ffcc00;
-            color: black;
-            border: none;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        button:hover {
-            background-color: #ffdb33;
-        }
-        #results, #ranking, #lastResults, #tournamentDiagram {
-            margin-top: 20px;
-        }
-        .player {
-            display: flex;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-        .player img {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            margin-right: 10px;
-        }
-        .bronze { border: 2px solid #cd7f32; }
-        .silver { border: 2px solid #c0c0c0; }
-        .gold { border: 2px solid #ffd700; }
-        #roster {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            margin-top: 20px;
-        }
-        #roster img {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            margin: 5px;
-        }
-        .trophy {
-            width: 20px;
-            height: 20px;
-            display: inline-block;
-            background-color: gold;
-            mask: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgZmlsbC1vcGFjaXR5PSJuYW1lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Ik0yMC43NTUsMi43NTUgTDIwLjU1LDMuNDExIFoiIGZpbGw9ImdyZWVuIiBvcGFjaXR5PSJuYW1lIiBzdHJva2U9Im5vbmUiIHN0cm9rZS13aWR0aD0iMSIgc3Ryb2tlLWNhcGl0eD0iMSIgc3Ryb2tlLWRhcmtpbmVzPSIxMDAiLz48cGF0aCBkPSJNMTMuNTgsMTcuNjU2IEwxMy41OCwyMS4wMDMiIGZpbGw9ImdyZWVuIiBvcGFjaXR5PSJuYW1lIiBzdHJva2U9Im5vbmUiIHN0cm9rZS13aWR0aD0iMSIgc3Ryb2tlLWNhcGl0eD0iMSIgc3Ryb2tlLWRhcmtpbmVzPSIxMDAiLz48cGF0aCBkPSJNMTUuMiwxOC45NzUgTDE1LjYzNSwxOC41NTAyIEwxNi40MDEsMTYuMjQ2MDUgTDE1LjYzNSwxNi41NzA3IEwxNC43NTUsMTUuMzYyMyBMMTYuNDEzLC45OTMwNyBMMTUuNTQ0LDE2LjY4MSBMMTQuMTY3LDE2LjU3NzcgTDEzLjQxLDE2LjU3NzcgTDEzLjQxLDE3LjY1MzMgTDIwLjk0LDE5LjA2NTg0IEwxOC42MzQsMTguMjU1IEwxOC4xNzY2LDE3LjU2MzkgTDE4LjM0OSwxNy42NjM4IEwxOC42MzQsMTguMjU1IEwxOC4xNzY2LDE3LjU2MzMgTDE4LjI0LDE3LjU2MzMgTDE4LjM0OSwxNy42NjM4IEwxOC43NjQ1LDE3LjU2MzMgTDE5Ljc4MywxOS4yMTg0IEwxNi45NDgsMTYuMTc5OTAgTDE2LjgzMDIsMTYuNzQ2IEwxNy42NTU4LDE3LjU2MzMgTDE4LjA1NCwxNi4xOTY5IEwxNy42NTUsMTUuNjk4MjIgTDE4LjA1NCwxNi4xOTY5IEwxNy42NTUsMTUuNjk4MjIgTDE4LjE3NiwxNy42NzU5IEwxNy4zNjQsMTUuNjk4MjIgTDE5LjQ2NiwxNi42NjU3IFoiLz48L3N2Zz4=');
-            mask-size: contain;
-            mask-repeat: no-repeat;
-        }
-        .tournament-group {
-            display: none;
-            margin-top: 20px;
-        }
-        @media (max-width: 600px) {
-            .container {
-                padding: 15px;
-            }
-            #roster img {
-                width: 40px;
-                height: 40px;
-            }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ping Pong Elo</title>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Press Start 2P', cursive;
+      background: #1e1e1e;
+      color: #fff;
+      text-align: center;
+      padding: 20px;
+    }
+    h1 {
+      color: #ffcc00;
+      font-size: 2.5rem;
+      animation: blink 1.5s infinite;
+    }
+    h2 {
+      font-size: 1.5rem;
+      animation: blink 1.5s infinite;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+    input, button {
+      padding: 10px;
+      margin: 5px;
+      border: none;
+      border-radius: 5px;
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.8rem;
+      width: 80%;
+      max-width: 300px;
+    }
+    button {
+      background: #ffcc00;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #ffdd33;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .league {
+      margin: 20px 0;
+      padding: 10px;
+      border-radius: 5px;
+    }
+    .diamond { background: #b9f2ff; color: #000; }
+    .gold { background: #ffd700; color: #000; }
+    .silver { background: #c0c0c0; color: #000; }
+    .bronze { background: #cd7f32; color: #000; }
+    .wood { background: #8b4513; color: #fff; }
+    .hidden { display: none; }
+    #amazonProducts {
+      margin-top: 20px;
+      border: 1px solid #ffcc00;
+      padding: 10px;
+      border-radius: 5px;
+    }
+    img {
+      border-radius: 50%;
+    }
+    .pixel-art {
+      display: flex;
+      justify-content: space-around;
+      margin: 20px 0;
+    }
+    .paddle {
+      width: 20px;
+      height: 80px;
+      background: #ffcc00;
+      position: relative;
+    }
+    .paddle::before {
+      content: '';
+      width: 10px;
+      height: 10px;
+      background: #fff;
+      position: absolute;
+      top: 10px;
+      left: 5px;
+    }
+    .ball {
+      width: 20px;
+      height: 20px;
+      background: #fff;
+      border-radius: 50%;
+      position: relative;
+      animation: bounce 1s infinite;
+    }
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+  </style>
 </head>
 <body>
+  <div class="container">
+    <h1>Ping Pong Elo</h1>
 
-<div class="container">
-    <h1>Ping Pong Top Global</h1>
-    
-    <div id="roster"></div>
-
-    <h2>Registrar Jugador</h2>
-    <div class="form-group">
-        <input type="text" id="newPlayer" placeholder="Nombre del jugador">
-        <input type="text" id="playerPhoto" placeholder="URL de la foto del jugador">
-        <button onclick="addPlayer()">Agregar Jugador</button>
+    <div class="pixel-art">
+      <div class="paddle"></div>
+      <div class="ball"></div>
+      <div class="paddle"></div>
     </div>
 
-    <h2>Registrar Partido</h2>
-    <div class="form-group">
-        <input type="text" id="winner" placeholder="Nombre del ganador">
-        <input type="text" id="loser" placeholder="Nombre del perdedor">
-        <input type="text" id="score" placeholder="Marcador (Ej. 3-1)">
-        <button onclick="calculateElo()">Registrar Partido</button>
+    <div id="mainMenu">
+      <button onclick="showSection('login')">Iniciar Sesión</button>
+      <button onclick="showSection('register')">Registrarse</button>
     </div>
 
-    <h2>Últimos Resultados</h2>
-    <div id="lastResults"></div>
-
-    <h2>Ranking</h2>
-    <div id="ranking"></div>
-
-    <h2>Opciones</h2>
-    <button onclick="toggleTournament()">Torneo</button>
-    <div class="tournament-group" id="tournamentGroup">
-        <h2>Registrar Torneo</h2>
-        <div class="form-group">
-          <input type="text" id="tournamentPlayers" placeholder="Nombres de jugadores (separados por comas)">
-            <button onclick="registerTournament()">Registrar Torneo</button>
-        </div>
-        <h2>Diagrama de Torneo</h2>
-        <div id="tournamentDiagram"></div>
-    </div>
-    <h2>Cambiar Foto de Perfil</h2>
-    <div class="form-group" id="change-photo-group">
-        <input type="text" id="playerNameForPhotoChange" placeholder="Nombre del jugador">
-        <input type="text" id="newPhotoUrl" placeholder="Nueva URL de foto">
-        <button onclick="changePlayerPhoto()">Cambiar Foto</button>
+    <div id="login" class="hidden">
+      <h2>Iniciar Sesión</h2>
+      <input type="email" id="loginEmail" placeholder="Correo electrónico">
+      <input type="password" id="loginPassword" placeholder="Contraseña">
+      <button onclick="login()">Iniciar Sesión</button>
+      <button onclick="showSection('mainMenu')">Regresar</button>
     </div>
 
-</div>
+    <div id="register" class="hidden">
+      <h2>Registro</h2>
+      <input type="text" id="username" placeholder="Usuario">
+      <input type="email" id="email" placeholder="Correo electrónico">
+      <input type="password" id="password" placeholder="Contraseña">
+      <button onclick="register()">Registrar</button>
+      <button onclick="showSection('mainMenu')">Regresar</button>
+    </div>
 
-<script>
-    const players = [];
+    <div id="userPanel" class="hidden">
+      <h2>Bienvenido, <span id="currentUser"></span></h2>
+      <button onclick="showSection('changePassword')">Cambiar Contraseña</button>
+      <button onclick="showSection('uploadPhoto')">Subir Foto</button>
+      <button onclick="showSection('registerMatch')">Registrar Partido</button>
+      <button onclick="showSection('confirmMatches')">Confirmar Partidos</button>
+      <button onclick="showSection('ranking')">Ver Ranking</button>
+      <button onclick="showSection('amazon')">Productos Recomendados</button>
+      <button onclick="logout()">Cerrar Sesión</button>
+    </div>
 
-    function addPlayer() {
-        const playerName = document.getElementById('newPlayer').value;
-        const playerPhoto = document.getElementById('playerPhoto').value;
-        if (playerName && playerPhoto) {
-            players.push({ name: playerName, photo: playerPhoto, elo: 1200 });
-            document.getElementById('newPlayer').value = '';
-            document.getElementById('playerPhoto').value = '';
-            renderRoster();
-            renderRanking();
-        }
+    <div id="changePassword" class="hidden">
+      <h2>Cambiar Contraseña</h2>
+      <input type="password" id="newPassword" placeholder="Nueva Contraseña">
+      <button onclick="changePassword()">Cambiar</button>
+      <button onclick="showSection('userPanel')">Regresar</button>
+    </div>
+
+    <div id="uploadPhoto" class="hidden">
+      <h2>Foto de Perfil</h2>
+      <input type="file" id="photo" accept="image/*">
+      <button onclick="uploadPhoto()">Subir Foto</button>
+      <button onclick="showSection('userPanel')">Regresar</button>
+    </div>
+
+    <div id="registerMatch" class="hidden">
+      <h2>Registrar Partido</h2>
+      <input type="text" id="player1" placeholder="Jugador 1">
+      <input type="text" id="player2" placeholder="Jugador 2">
+      <button onclick="registerMatch()">Registrar</button>
+      <button onclick="showSection('userPanel')">Regresar</button>
+    </div>
+
+    <div id="confirmMatches" class="hidden">
+      <h2>Confirmar Partidos</h2>
+      <div id="pendingMatchesList"></div>
+      <button onclick="showSection('userPanel')">Regresar</button>
+    </div>
+
+    <div id="ranking" class="hidden">
+      <h2>Ranking</h2>
+      <div id="rankingList"></div>
+      <button onclick="showSection('userPanel')">Regresar</button>
+    </div>
+
+    <div id="amazon" class="hidden">
+      <h2>Productos Recomendados</h2>
+      <div id="amazonProducts">
+        <iframe src="https://www.amazon.com/s?k=ping+pong" width="100%" height="500px"></iframe>
+      </div>
+      <button onclick="showSection('userPanel')">Regresar</button>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const supabaseUrl = 'https://tcypslgtdaroticulnfu.supabase.co';
+      const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRjeXBzbGd0ZGFyb3RpY3VsbmZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc4Mjk4MTQsImV4cCI6MjA1MzQwNTgxNH0.E_w5yWzbzGQKEuDvKd7n7pbFUmb7Whd0pVis9li9LEA';
+      window.supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+      showSection('mainMenu');
+    });
+
+    let currentUser = null;
+
+    function showSection(sectionId) {
+      document.querySelectorAll('.container > div').forEach(div => div.classList.add('hidden'));
+      document.getElementById(sectionId).classList.remove('hidden');
+      if (sectionId === 'confirmMatches') loadPendingMatches();
+      if (sectionId === 'ranking') showRanking();
     }
 
-    function calculateElo() {
-        const winnerName = document.getElementById('winner').value;
-        const loserName = document.getElementById('loser').value;
-        const score = document.getElementById('score').value;
-        // Lógica de cálculo de ELO aquí
-        document.getElementById('winner').value = '';
-        document.getElementById('loser').value = '';
-        document.getElementById('score').value = '';
-        renderLastResults();
-    }
+    async function register() {
+      const username = document.getElementById('username').value;
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
 
-    function toggleTournament() {
-        const tournamentGroup = document.getElementById('tournamentGroup');
-        tournamentGroup.style.display = tournamentGroup.style.display === 'block' ? 'none' : 'block';
-    }
+      if (username && email && password) {
+        const { user, error } = await supabase.auth.signUp({
+          email,
+          password,
+        });
 
-    function registerTournament() {
-        const playersString = document.getElementById('tournamentPlayers').value;
-        const tournamentPlayers = playersString.split(',').map(p => p.trim());
-        // Lógica de registro de torneo aquí
-        document.getElementById('tournamentPlayers').value = '';
-        renderTournamentDiagram();
-    }
-
-    function changePlayerPhoto() {
-        const playerName = document.getElementById('playerNameForPhotoChange').value;
-        const newPhotoUrl = document.getElementById('newPhotoUrl').value;
-        const player = players.find(p => p.name === playerName);
-        if (player) {
-            player.photo = newPhotoUrl;
-            renderRoster();
-            document.getElementById('playerNameForPhotoChange').value = '';
-            document.getElementById('newPhotoUrl').value = '';
+        if (error) {
+          alert('Error al registrarse: ' + error.message);
         } else {
-            alert('Jugador no encontrado');
+          const { data, error: profileError } = await supabase
+            .from('profiles')
+            .insert([{ id: user.id, username, elo: 1200 }]);
+
+          if (profileError) {
+            alert('Error al guardar el perfil: ' + profileError.message);
+          } else {
+            alert('Registrado! Por favor, verifica tu correo electrónico.');
+            showSection('login');
+          }
         }
+      }
     }
 
-    function renderRoster() {
-        const rosterDiv = document.getElementById('roster');
-        rosterDiv.innerHTML = '';
-        players.forEach(player => {
-            const playerDiv = document.createElement('div');
-            playerDiv.className = 'player';
-            playerDiv.innerHTML = `<img src="${player.photo}" alt="${player.name}"> ${player.name}`;
-            rosterDiv.appendChild(playerDiv);
-        });
+    async function login() {
+      const email = document.getElementById('loginEmail').value;
+      const password = document.getElementById('loginPassword').value;
+
+      const { user, error } = await supabase.auth.signIn({
+        email,
+        password,
+      });
+
+      if (error) {
+        alert('Error al iniciar sesión: ' + error.message);
+      } else {
+        currentUser = user;
+        document.getElementById('currentUser').textContent = user.email;
+        showSection('userPanel');
+      }
     }
 
-    function renderLastResults() {
-        const lastResultsDiv = document.getElementById('lastResults');
-        lastResultsDiv.innerHTML = 'Resultados recientes aparecerán aquí.';
-        // Lógica para mostrar resultados
+    async function logout() {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        alert('Error al cerrar sesión: ' + error.message);
+      } else {
+        currentUser = null;
+        showSection('mainMenu');
+      }
     }
 
-    function renderRanking() {
-        const rankingDiv = document.getElementById('ranking');
-        rankingDiv.innerHTML = '';
-        players.sort((a, b) => b.elo - a.elo);
-        players.forEach((player, index) => {
-            const medalClass = index === 0 ? 'gold' : index === 1 ? 'silver' : index === 2 ? 'bronze' : '';
-            const playerDiv = document.createElement('div');
-            playerDiv.className = `player ${medalClass}`;
-            playerDiv.innerHTML = `<img src="${player.photo}" alt="${player.name}"> ${index + 1}. ${player.name} (ELO: ${player.elo})`;
-            rankingDiv.appendChild(playerDiv);
-        });
+    async function changePassword() {
+      const newPassword = document.getElementById('newPassword').value;
+      if (currentUser) {
+        const { error } = await supabase.auth.updateUser({ password: newPassword });
+        if (error) {
+          alert('Error al cambiar la contraseña: ' + error.message);
+        } else {
+          alert('Contraseña cambiada!');
+        }
+      }
     }
 
-    function renderTournamentDiagram() {
-        const tournamentDiagramDiv = document.getElementById('tournamentDiagram');
-        tournamentDiagramDiv.innerHTML = 'Diagrama del torneo aparecerá aquí.';
-        // Lógica para mostrar diagrama de torneo
+    async function uploadPhoto() {
+      const file = document.getElementById('photo').files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = async function(e) {
+          if (currentUser) {
+            const { data, error } = await supabase
+              .from('profiles')
+              .update({ photo: e.target.result })
+              .eq('id', currentUser.id);
+
+            if (error) {
+              alert('Error al subir la foto: ' + error.message);
+            } else {
+              alert('Foto subida!');
+            }
+          }
+        };
+        reader.readAsDataURL(file);
+      }
     }
-</script>
+
+    async function registerMatch() {
+      const player1 = document.getElementById('player1').value;
+      const player2 = document.getElementById('player2').value;
+      const winner = prompt(`¿Quién ganó? (${player1} o ${player2})`);
+
+      if (winner === player1 || winner === player2) {
+        const { data, error } = await supabase
+          .from('matches')
+          .insert([{ player1, player2, winner, confirmedBy: [] }]);
+
+        if (error) {
+          alert('Error al registrar el partido: ' + error.message);
+        } else {
+          alert('Partido registrado. Esperando confirmación del otro jugador.');
+          showSection('userPanel');
+        }
+      }
+    }
+
+    async function loadPendingMatches() {
+      const { data: matches, error } = await supabase
+        .from('matches')
+        .select('*')
+        .or(`player1.eq.${currentUser.email},player2.eq.${currentUser.email}`);
+
+      if (error) {
+        alert('Error al cargar los partidos pendientes: ' + error.message);
+        return;
+      }
+
+      const pendingMatchesList = document.getElementById('pendingMatchesList');
+      pendingMatchesList.innerHTML = matches
+        .map(match => `
+          <div>
+            <p>${match.player1} vs ${match.player2} - Ganador: ${match.winner}</p>
+            ${match.confirmedBy.includes(currentUser.email) ? 'Confirmado' : `
+              <button onclick="confirmMatch('${match.player1}', '${match.player2}')">Confirmar</button>
+            `}
+          </div>
+        `).join('');
+    }
+
+    async function confirmMatch(player1, player2) {
+      const { data: match, error } = await supabase
+        .from('matches')
+        .select('*')
+        .eq('player1', player1)
+        .eq('player2', player2)
+        .single();
+
+      if (error) {
+        alert('Error al cargar el partido: ' + error.message);
+        return;
+      }
+
+      if (match && !match.confirmedBy.includes(currentUser.email)) {
+        const confirmedBy = [...match.confirmedBy, currentUser.email];
+
+        const { data: updatedMatch, error: updateError } = await supabase
+          .from('matches')
+          .update({ confirmedBy })
+          .eq('id', match.id);
+
+        if (updateError) {
+          alert('Error al confirmar el partido: ' + updateError.message);
+          return;
+        }
+
+        if (confirmedBy.length === 2) {
+          const { data: p1, error: p1Error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('username', match.player1)
+            .single();
+
+          const { data: p2, error: p2Error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('username', match.player2)
+            .single();
+
+          if (p1Error || p2Error) {
+            alert('Error al cargar los perfiles de los jugadores.');
+            return;
+          }
+
+          updateElo(p1, p2, match.winner);
+
+          const { error: deleteError } = await supabase
+            .from('matches')
+            .delete()
+            .eq('id', match.id);
+
+          if (deleteError) {
+            alert('Error al eliminar el partido confirmado: ' + deleteError.message);
+          } else {
+            alert('Partido confirmado y Elo actualizado.');
+          }
+        } else {
+          alert('Confirmación registrada. Esperando confirmación del otro jugador.');
+        }
+
+        loadPendingMatches();
+      }
+    }
+
+    function updateElo(p1, p2, winner) {
+      const K = 32;
+      const expected1 = 1 / (1 + 10 ** ((p2.elo - p1.elo) / 400));
+      const expected2 = 1 / (1 + 10 ** ((p1.elo - p2.elo) / 400));
+      if (winner === p1.username) {
+        p1.elo += K * (1 - expected1);
+        p2.elo += K * (0 - expected2);
+      } else {
+        p1.elo += K * (0 - expected1);
+        p2.elo += K * (1 - expected2);
+      }
+    }
+
+    async function showRanking() {
+      const { data: profiles, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('elo', { ascending: false });
+
+      if (error) {
+        alert('Error al cargar el ranking: ' + error.message);
+        return;
+      }
+
+      const rankingList = document.getElementById('rankingList');
+      rankingList.innerHTML = profiles.map((p, i) => `
+        <div class="league ${getLeagueClass(p.elo)}">
+          <p>${i + 1}. ${p.username} - Elo: ${p.elo} (${getLeague(p.elo)})</p>
+          ${p.photo ? `<img src="${p.photo}" alt="${p.username}" width="50" height="50">` : ''}
+        </div>
+      `).join('');
+    }
+
+    function getLeague(elo) {
+      if (elo >= 2000) return 'Diamante';
+      if (elo >= 1800) return 'Oro';
+      if (elo >= 1600) return 'Plata';
+      if (elo >= 1400) return 'Bronce';
+      return 'Madera';
+    }
+
+    function getLeagueClass(elo) {
+      if (elo >= 2000) return 'diamond';
+      if (elo >= 1800) return 'gold';
+      if (elo >= 1600) return 'silver';
+      if (elo >= 1400) return 'bronze';
+      return 'wood';
+    }
+  </script>
 </body>
 </html>

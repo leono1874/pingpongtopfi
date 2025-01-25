@@ -194,6 +194,30 @@
       const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRjeXBzbGd0ZGFyb3RpY3VsbmZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc4Mjk4MTQsImV4cCI6MjA1MzQwNTgxNH0.E_w5yWzbzGQKEuDvKd7n7pbFUmb7Whd0pVis9li9LEA';
       window.supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
+      supabase.auth.onAuthStateChange(async (event, session) => {
+        if (event === 'SIGNED_IN' && session) {
+          currentUser = session.user;
+          document.getElementById('currentUser').textContent = currentUser.email;
+          showSection('userPanel');
+
+          const { data: profile, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', currentUser.id)
+            .single();
+
+          if (error || !profile) {
+            const { error: insertError } = await supabase
+              .from('profiles')
+              .insert([{ id: currentUser.id, username: currentUser.email, elo: 1200 }]);
+
+            if (insertError) {
+              alert('Error al crear el perfil: ' + insertError.message);
+            }
+          }
+        }
+      });
+
       showSection('mainMenu');
     });
 
@@ -220,16 +244,8 @@
         if (error) {
           alert('Error al registrarse: ' + error.message);
         } else {
-          const { data, error: profileError } = await supabase
-            .from('profiles')
-            .insert([{ id: user.id, username, elo: 1200 }]);
-
-          if (profileError) {
-            alert('Error al guardar el perfil: ' + profileError.message);
-          } else {
-            alert('Registrado! Por favor, verifica tu correo electrónico.');
-            showSection('login');
-          }
+          alert('Registrado! Por favor, verifica tu correo electrónico.');
+          showSection('login');
         }
       }
     }

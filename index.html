@@ -164,9 +164,30 @@
         const reader = new FileReader();
         reader.onload = async function(e) {
           if (currentUser) {
-            const { data, error } = await supabase.from('profiles').update({ photo: e.target.result }).eq('id', currentUser.id);
-            if (error) alert('Error al subir la foto: ' + error.message);
-            else alert('Foto subida!');
+            const { error } = await supabase
+              .from('profiles')
+              .update({ 
+                photo: e.target.result,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', currentUser.id);
+            
+            if (error) {
+              alert('Error al subir la foto: ' + error.message);
+            } else {
+              alert('Foto subida! Actualizando perfil...');
+              const { data: profile } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', currentUser.id)
+                .single();
+              
+              if(profile.photo) {
+                document.querySelectorAll('img').forEach(img => {
+                  if(img.alt === profile.username) img.src = profile.photo;
+                });
+              }
+            }
           }
         };
         reader.readAsDataURL(file);
@@ -219,66 +240,89 @@
       alert('Partido pendiente creado. Esperando confirmación del contrincante.');
     }
 
-    async function confirmMatch(matchId, winner) {
-      const { data: match, error: matchError } = await supabase
+    async function confirmMatch(matchId) {
+      const { data: match } = await supabase
         .from('pending_matches')
         .select('*')
         .eq('id', matchId)
         .single();
 
-      if (matchError) {
-        alert('Error al obtener el partido: ' + matchError.message);
-        return;
-      }
+      const confirmation = confirm(
+        `Confirmar resultado: ${match.winner} vs ${match.player1 === currentUser.email ? match.player2 : match.player1}\n¿${match.winner} ganó?`
+      );
 
-      const isPlayer1 = match.player1 === currentUser.email;
-      const isPlayer2 = match.player2 === currentUser.email;
+      if (confirmation) {
+        const updateField = match.player1 === currentUser.email 
+          ? 'confirmed_by_player1' 
+          : 'confirmed_by_player2';
+        
+        const { error } = await supabase
+          .from('pending_matches')
+          .update({ [updateField]: true })
+          .eq('id', matchId);
 
-      if (!isPlayer1 && !isPlayer2) {
-        alert('No tienes permiso para confirmar este partido.');
-        return;
-      }
+        if (!error) {
+          const updatedMatch = await supabase
+            .from('pending_matches')
+            .select('*')
+            .eq('id', matchId)
+            .single();
 
-      const update = isPlayer1 ? { confirmed_by_player1: true, winner } : { confirmed_by_player2: true, winner };
-
-      const { data: updatedMatch, error: updateError } = await supabase
-        .from('pending_matches')
-        .update(update)
-        .eq('id', matchId);
-
-      if (updateError) {
-        alert('Error al confirmar el partido: ' + updateError.message);
-        return;
-      }
-
-      if (updatedMatch.confirmed_by_player1 && updatedMatch.confirmed_by_player2) {
-        if (updatedMatch.winner === match.player1 || updatedMatch.winner === match.player2) {
-          const { error: matchError } = await supabase
-            .from('matches')
-            .insert([{ player1: match.player1, player2: match.player2, winner: updatedMatch.winner }]);
-
-          if (matchError) {
-            alert('Error al registrar el partido: ' + matchError.message);
-            return;
+          if (updatedMatch.data.confirmed_by_player1 && updatedMatch.data.confirmed_by_player2) {
+            await processCompletedMatch(updatedMatch.data);
           }
-
-          await supabase.from('pending_matches').delete().eq('id', matchId);
-          alert('Partido confirmado y registrado.');
-        } else {
-          alert('Los jugadores no coinciden en el ganador. Por favor, revisen.');
         }
-      } else {
-        alert('Partido confirmado. Esperando confirmación del contrincante.');
       }
+    }
+
+    async function processCompletedMatch(match) {
+      const player1 = await supabase.from('profiles').select('elo').eq('email', match.player1).single();
+      const player2 = await supabase.from('profiles').select('elo').eq('email', match.player2).single();
+      
+      const eloChanges = calculateELO(
+        player1.data.elo, 
+        player2.data.elo, 
+        match.winner === match.player1 ? 'player1' : 'player2'
+      );
+
+      await supabase
+        .from('profiles')
+        .update({ elo: eloChanges.newELO1 })
+        .eq('email', match.player1);
+
+      await supabase
+        .from('profiles')
+        .update({ elo: eloChanges.newELO2 })
+        .eq('email', match.player2);
+
+      await supabase
+        .from('matches')
+        .insert([match]);
+
+      await supabase
+        .from('pending_matches')
+        .delete()
+        .eq('id', match.id);
+
+      alert('¡Partido confirmado! El ranking se ha actualizado.');
+      showRanking();
     }
 
     function subscribeToPendingMatches() {
       supabase
         .from('pending_matches')
-        .on('UPDATE', payload => {
+        .on('*', payload => {
           const match = payload.new;
-          if ((match.player1 === currentUser.email || match.player2 === currentUser.email) && match.confirmed_by_player1 && match.confirmed_by_player2) {
-            alert('Partido confirmado por ambos jugadores. El ganador es: ' + match.winner);
+          if ((match.player1 === currentUser.email || match.player2 === currentUser.email) && !payload.deleted) {
+            const needsConfirmation = match.player1 === currentUser.email 
+              ? !match.confirmed_by_player1 
+              : !match.confirmed_by_player2;
+            
+            if (needsConfirmation) {
+              if(confirm(`Tienes un partido pendiente de confirmar contra ${match.player1 === currentUser.email ? match.player2 : match.player1}. ¿Quieres confirmar ahora?`)) {
+                confirmMatch(match.id);
+              }
+            }
           }
         })
         .subscribe();

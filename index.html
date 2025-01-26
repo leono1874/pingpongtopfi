@@ -133,12 +133,12 @@
       const username = document.getElementById('username').value;
       const email = document.getElementById('email').value;
       if (username && email) {
-        const { user, error } = await supabase.auth.signUp({ email, options: { emailRedirectTo: window.location.href } });
-        if (error) alert('Error al registrarse: ' + error.message);
-        else {
-          const { data, error: profileError } = await supabase.from('profiles').insert([{ id: user.id, username, elo: 1200 }]);
-          if (profileError) alert('Error al guardar el perfil: ' + profileError.message);
-          else { alert('Registrado! Por favor, verifica tu correo electrónico.'); showSection('login'); }
+        const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.href } });
+        if (error) {
+          alert('Error al registrarse: ' + error.message);
+        } else {
+          alert('¡Revisa tu correo electrónico para completar el registro!');
+          showSection('login');
         }
       }
     }

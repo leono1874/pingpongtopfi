@@ -133,7 +133,7 @@
       const username = document.getElementById('username').value;
       const email = document.getElementById('email').value;
       if (username && email) {
-        const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.href } });
+        const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.origin } });
         if (error) {
           alert('Error al registrarse: ' + error.message);
         } else {
@@ -146,7 +146,7 @@
     async function sendMagicLink() {
       const email = document.getElementById('loginEmail').value;
       if (email) {
-        const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.href } });
+        const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.origin } });
         if (error) alert('Error al enviar el enlace mágico: ' + error.message);
         else alert('¡Revisa tu correo electrónico para iniciar sesión!');
       }

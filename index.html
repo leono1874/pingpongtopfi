@@ -104,7 +104,7 @@
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const supabaseUrl = 'https://tcypslgtdaroticulnfu.supabase.co';
-      const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRjeXBzbGd0ZGFyb3RpY3VsbmZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc4Mjk4MTQsImV4cCI6MjA1MzQwNTgxNH0.E_w5yWzbzGQKEuDvKd7n7pbFUmb7Whd0pVis9li9LEA';
+      const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRjeXBzbGd0ZGFyb3RpY3VsbmZ1Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTczNzgyOTgxNCwiZXhwIjoyMDUzNDA1ODE0fQ.t2jF2mybCfEJXmikqJI3LbRHCkoWGZeHnM6OUiuFHCI';
       window.supabase = supabase.createClient(supabaseUrl, supabaseKey, { auth: { persistSession: true, detectSessionInUrl: true } });
       supabase.auth.onAuthStateChange(async (event, session) => {
         if (event === 'SIGNED_IN' && session) {
@@ -115,16 +115,20 @@
             if (insertError) alert('Error al crear el perfil: ' + insertError.message);
           } else document.getElementById('currentUser').textContent = profile.username;
           showSection('userPanel');
+          subscribeToPendingMatches();
         }
       });
       showSection('mainMenu');
     });
+
     let currentUser = null;
     let selectedOpponent = null;
+
     function showSection(sectionId) {
       document.querySelectorAll('.container > div').forEach(div => div.classList.toggle('hidden', div.id !== sectionId));
       if (sectionId === 'ranking') showRanking();
     }
+
     async function register() {
       const username = document.getElementById('username').value;
       const email = document.getElementById('email').value;
@@ -138,6 +142,7 @@
         }
       }
     }
+
     async function sendMagicLink() {
       const email = document.getElementById('loginEmail').value;
       if (email) {
@@ -146,11 +151,13 @@
         else alert('¡Revisa tu correo electrónico para iniciar sesión!');
       }
     }
+
     async function logout() {
       const { error } = await supabase.auth.signOut();
       if (error) alert('Error al cerrar sesión: ' + error.message);
       else { currentUser = null; showSection('mainMenu'); }
     }
+
     async function uploadPhoto() {
       const file = document.getElementById('photo').files[0];
       if (file) {
@@ -165,50 +172,118 @@
         reader.readAsDataURL(file);
       }
     }
+
     function openPlayerModal() {
       document.getElementById('playerModal').style.display = 'block';
       document.getElementById('overlay').style.display = 'block';
       loadPlayers();
     }
+
     function closePlayerModal() {
       document.getElementById('playerModal').style.display = 'none';
       document.getElementById('overlay').style.display = 'none';
     }
+
     async function loadPlayers() {
       const { data: profiles, error } = await supabase.from('profiles').select('username').neq('username', currentUser.email);
       if (error) { alert('Error al cargar los jugadores: ' + error.message); return; }
       const playerList = document.getElementById('playerList');
       playerList.innerHTML = profiles.map(p => `<div onclick="selectOpponent('${p.username}')">${p.username}</div>`).join('');
     }
+
     function filterPlayers() {
       const searchTerm = document.getElementById('searchPlayer').value.toLowerCase();
       const playerList = document.getElementById('playerList');
       Array.from(playerList.children).forEach(item => item.style.display = item.textContent.toLowerCase().includes(searchTerm) ? 'block' : 'none');
     }
-    function selectOpponent(username) {
+
+    async function selectOpponent(username) {
       selectedOpponent = username;
       closePlayerModal();
-      confirmMatch();
-    }
-    async function confirmMatch() {
-      if (!selectedOpponent) return;
-      const confirmation = confirm(`${selectedOpponent}, ¿confirmas el partido con ${currentUser.email}?`);
-      if (confirmation) {
-        const winner = prompt(`¿Quién ganó? (${currentUser.email} o ${selectedOpponent})`);
-        if (winner === currentUser.email || winner === selectedOpponent) {
-          const { data: player1Data, error: player1Error } = await supabase.from('profiles').select('elo').eq('username', currentUser.email).single();
-          const { data: player2Data, error: player2Error } = await supabase.from('profiles').select('elo').eq('username', selectedOpponent).single();
-          if (player1Error || player2Error) { alert('Error al obtener los datos de los jugadores.'); return; }
-          const { newELO1, newELO2 } = calculateELO(player1Data.elo, player2Data.elo, winner);
-          const { error: updateError1 } = await supabase.from('profiles').update({ elo: newELO1 }).eq('username', currentUser.email);
-          const { error: updateError2 } = await supabase.from('profiles').update({ elo: newELO2 }).eq('username', selectedOpponent);
-          if (updateError1 || updateError2) { alert('Error al actualizar los ELOs.'); return; }
-          const { error: matchError } = await supabase.from('matches').insert([{ player1: currentUser.email, player2: selectedOpponent, winner }]);
-          if (matchError) alert('Error al registrar el partido: ' + matchError.message);
-          else { alert('Partido registrado.'); showSection('userPanel'); }
-        }
+      const winner = prompt(`¿Quién ganó? (${currentUser.email} o ${selectedOpponent})`);
+      if (winner === currentUser.email || winner === selectedOpponent) {
+        await createPendingMatch(selectedOpponent, winner);
       }
     }
+
+    async function createPendingMatch(opponent, winner) {
+      const { data, error } = await supabase
+        .from('pending_matches')
+        .insert([{ player1: currentUser.email, player2: opponent, winner }]);
+
+      if (error) {
+        alert('Error al crear el partido pendiente: ' + error.message);
+        return;
+      }
+
+      alert('Partido pendiente creado. Esperando confirmación del contrincante.');
+    }
+
+    async function confirmMatch(matchId, winner) {
+      const { data: match, error: matchError } = await supabase
+        .from('pending_matches')
+        .select('*')
+        .eq('id', matchId)
+        .single();
+
+      if (matchError) {
+        alert('Error al obtener el partido: ' + matchError.message);
+        return;
+      }
+
+      const isPlayer1 = match.player1 === currentUser.email;
+      const isPlayer2 = match.player2 === currentUser.email;
+
+      if (!isPlayer1 && !isPlayer2) {
+        alert('No tienes permiso para confirmar este partido.');
+        return;
+      }
+
+      const update = isPlayer1 ? { confirmed_by_player1: true, winner } : { confirmed_by_player2: true, winner };
+
+      const { data: updatedMatch, error: updateError } = await supabase
+        .from('pending_matches')
+        .update(update)
+        .eq('id', matchId);
+
+      if (updateError) {
+        alert('Error al confirmar el partido: ' + updateError.message);
+        return;
+      }
+
+      if (updatedMatch.confirmed_by_player1 && updatedMatch.confirmed_by_player2) {
+        if (updatedMatch.winner === match.player1 || updatedMatch.winner === match.player2) {
+          const { error: matchError } = await supabase
+            .from('matches')
+            .insert([{ player1: match.player1, player2: match.player2, winner: updatedMatch.winner }]);
+
+          if (matchError) {
+            alert('Error al registrar el partido: ' + matchError.message);
+            return;
+          }
+
+          await supabase.from('pending_matches').delete().eq('id', matchId);
+          alert('Partido confirmado y registrado.');
+        } else {
+          alert('Los jugadores no coinciden en el ganador. Por favor, revisen.');
+        }
+      } else {
+        alert('Partido confirmado. Esperando confirmación del contrincante.');
+      }
+    }
+
+    function subscribeToPendingMatches() {
+      supabase
+        .from('pending_matches')
+        .on('UPDATE', payload => {
+          const match = payload.new;
+          if ((match.player1 === currentUser.email || match.player2 === currentUser.email) && match.confirmed_by_player1 && match.confirmed_by_player2) {
+            alert('Partido confirmado por ambos jugadores. El ganador es: ' + match.winner);
+          }
+        })
+        .subscribe();
+    }
+
     function calculateELO(player1ELO, player2ELO, winner) {
       const K = 32;
       const expectedScore = (elo1, elo2) => 1 / (1 + Math.pow(10, (elo2 - elo1) / 400));
@@ -218,6 +293,7 @@
       const newELO2 = player2ELO + K * (winner === 'player2' ? 1 - expected2 : 0 - expected2);
       return { newELO1, newELO2 };
     }
+
     async function showRanking() {
       const { data: profiles, error } = await supabase.from('profiles').select('*').order('elo', { ascending: false });
       if (error) { alert('Error al cargar el ranking: ' + error.message); return; }
@@ -229,6 +305,7 @@
         </div>
       `).join('');
     }
+
     function getLeague(elo) {
       if (elo >= 2000) return 'Diamante';
       if (elo >= 1800) return 'Oro';
@@ -236,6 +313,7 @@
       if (elo >= 1400) return 'Bronce';
       return 'Madera';
     }
+
     function getLeagueClass(elo) {
       if (elo >= 2000) return 'diamond';
       if (elo >= 1800) return 'gold';
